@@ -1,6 +1,8 @@
 package com.example.tracking.kafka.consumer;
 
 import com.example.tracking.model.CourierLocationUpdatedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class CourierRedisConsumer {
 
+    private Logger log = LoggerFactory.getLogger(CourierRedisConsumer.class);
     private final RedisTemplate<String, Object> redisTemplate;
 
     public CourierRedisConsumer(
@@ -20,17 +23,16 @@ public class CourierRedisConsumer {
             topics = "courier-location-topic",
             groupId = "tracking-group"
     )
+    @KafkaListener(topics = "courier-location-topic", groupId = "tracking-group")
     public void consume(CourierLocationUpdatedEvent event) {
 
-        String redisKey =
-                "courier:location:" + event.getCourierId();
+        log.info("📩 Event received from Kafka | courierId={} | lat={} | lon={}",
+                event.getCourierId(), event.getLatitude(), event.getLongitude());
 
-        redisTemplate.opsForValue()
-                .set(redisKey, event);
+        String redisKey = "courier:location:" + event.getCourierId();
 
-        System.out.println(
-                "Saved latest location to Redis: "
-                        + event.getCourierId()
-        );
+        redisTemplate.opsForValue().set(redisKey, event);
+
+        log.info("💾 Saved to Redis | key={}", redisKey);
     }
 }

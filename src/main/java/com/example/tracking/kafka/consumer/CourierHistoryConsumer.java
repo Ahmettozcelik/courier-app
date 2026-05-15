@@ -1,19 +1,23 @@
 package com.example.tracking.kafka.consumer;
 
+import com.example.tracking.mapper.CourierMovementMapper;
 import com.example.tracking.model.CourierLocationUpdatedEvent;
 import com.example.tracking.mongo.document.CourierMovementDocument;
 import com.example.tracking.repository.CourierMovementRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CourierHistoryConsumer {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(CourierHistoryConsumer.class);
+
     private final CourierMovementRepository repository;
 
-    public CourierHistoryConsumer(
-            CourierMovementRepository repository
-    ) {
+    public CourierHistoryConsumer(CourierMovementRepository repository) {
         this.repository = repository;
     }
 
@@ -23,21 +27,15 @@ public class CourierHistoryConsumer {
     )
     public void consume(CourierLocationUpdatedEvent event) {
 
+        log.info("📥 Kafka event received for history | courierId={} | eventId={}",
+                event.getCourierId(), event.getEventId());
+
         CourierMovementDocument doc =
-                CourierMovementDocument.builder()
-                        .courierId(event.getCourierId())
-                        .orderId(event.getOrderId())
-                        .latitude(event.getLatitude())
-                        .longitude(event.getLongitude())
-                        .eventId(event.getEventId())
-                        .timestamp(event.getTimestamp())
-                        .build();
+                CourierMovementMapper.toDocument(event);
 
         repository.save(doc);
 
-        System.out.println(
-                "Saved history to Mongo: "
-                        + event.getCourierId()
-        );
+        log.info("💾 Mongo history saved | courierId={} | eventId={}",
+                event.getCourierId(), event.getEventId());
     }
 }

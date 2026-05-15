@@ -19,7 +19,11 @@ public class CourierEventProducer {
     }
 
     public void sendLocationUpdate(CourierLocationUpdatedEvent event) {
-        log.info("Sending courier event: {}", event.getCourierId());
+        log.info("🚀 Sending event to Kafka | courierId={} | orderId={}",
+                event.getCourierId(), event.getOrderId());
+
         kafkaTemplate.send(TOPIC, event.getCourierId(), event);
+
+        log.info("✅ Event sent to topic={}", TOPIC);
     }
 }
