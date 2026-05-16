@@ -1,5 +1,6 @@
 package com.example.tracking.service;
 
+import com.example.tracking.exception.CourierNotFoundException;
 import com.example.tracking.mapper.CourierMovementMapper;
 import com.example.tracking.model.CourierLocationUpdatedEvent;
 import com.example.tracking.model.dto.response.CourierLocationResponseDTO;
@@ -38,8 +39,8 @@ public class CourierTrackingQueryService {
         Object value = redisTemplate.opsForValue().get(key);
 
         if (value == null) {
-            log.warn("⚠ No Redis entry found | courierId={}", courierId);
-            throw new RuntimeException("Courier not found: " + courierId);
+            log.info("Redis MISS | courierId={}", courierId);
+            throw new CourierNotFoundException(courierId);
         }
 
         CourierLocationUpdatedEvent event =
@@ -67,7 +68,7 @@ public class CourierTrackingQueryService {
         log.info("📊 History fetched | courierId={} | records={}",
                 courierId, history.size());
 
-        return repository.findByCourierId(courierId)
+        return history
                 .stream()
                 .map(CourierMovementMapper::toResponse)
                 .toList();
