@@ -1,0 +1,82 @@
+version: "3.8"
+
+services:
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - tracking-network
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: tracking
+    networks:
+      - tracking-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    ports:
+      - "2181:2181"
+    networks:
+      - tracking-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    networks:
+      - tracking-network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+      # internal + external listeners
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  tracking-app:
+    build: .
+    container_name: tracking-app
+    restart: on-failure  # Kafka tamamen hazır olana kadar çökerse otomatik yeniden dener
+    ports:
+      - "8081:8081"
+    depends_on:
+      - kafka
+      - redis
+      - mongodb
+    networks:
+      - tracking-network
+    environment:
+      SERVER_PORT: 8081
+      # Hem nokta formatını hem de standart büyük harf formatını ekleyerek işimizi garantiye alıyoruz:
+      SPRING_DATA_MONGODB_URI: "mongodb://mongodb:27017/tracking"
+      SPRING_REDIS_HOST: "redis"
+      SPRING_REDIS_PORT: 6379
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
+      spring.data.mongodb.uri: "mongodb://mongodb:27017/tracking"
+      spring.redis.host: "redis"
+      spring.kafka.bootstrap-servers: "kafka:29092"
+
+# Tüm container'ların köprü kuracağı ortak ağ tanımı
+networks:
+  tracking-network:
+    driver: bridge

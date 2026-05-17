@@ -7,6 +7,7 @@ import com.example.tracking.model.dto.response.CourierLocationResponseDTO;
 import com.example.tracking.model.dto.response.CourierMovementResponseDTO;
 import com.example.tracking.mongo.document.CourierMovementDocument;
 import com.example.tracking.repository.CourierMovementRepository;
+import com.fasterxml.jackson.databind.ObjectMapper; // 🎯 Eklendi
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,11 +23,15 @@ public class CourierTrackingQueryService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final CourierMovementRepository repository;
+    private final ObjectMapper objectMapper; // 🎯 Eklendi
 
+    // Constructor'a ObjectMapper parametresi eklendi
     public CourierTrackingQueryService(RedisTemplate<String, Object> redisTemplate,
-                                       CourierMovementRepository repository) {
+                                       CourierMovementRepository repository,
+                                       ObjectMapper objectMapper) { // 🎯 Eklendi
         this.redisTemplate = redisTemplate;
         this.repository = repository;
+        this.objectMapper = objectMapper; // 🎯 Eklendi
     }
 
     public CourierLocationResponseDTO getLatestLocation(String courierId) {
@@ -43,18 +48,24 @@ public class CourierTrackingQueryService {
             throw new CourierNotFoundException(courierId);
         }
 
-        CourierLocationUpdatedEvent event =
-                (CourierLocationUpdatedEvent) value;
+        try {
+            // 🎯 ESKİ CAST SATIRI YERİNE: JSON String'i nesneye el ile güvenli bir şekilde çeviriyoruz
+            CourierLocationUpdatedEvent event =
+                    objectMapper.readValue(value.toString(), CourierLocationUpdatedEvent.class);
 
-        log.info("📦 Redis hit successful | courierId={} | lat={} | lon={}",
-                event.getCourierId(), event.getLatitude(), event.getLongitude());
+            log.info("📦 Redis hit successful | courierId={} | lat={} | lon={}",
+                    event.getCourierId(), event.getLatitude(), event.getLongitude());
 
-        return new CourierLocationResponseDTO(
-                event.getCourierId(),
-                event.getLatitude(),
-                event.getLongitude(),
-                event.getTimestamp()
-        );
+            return new CourierLocationResponseDTO(
+                    event.getCourierId(),
+                    event.getLatitude(),
+                    event.getLongitude(),
+                    event.getTimestamp()
+            );
+        } catch (Exception e) {
+            log.error("❌ Failed to parse Redis value to CourierLocationUpdatedEvent", e);
+            throw new RuntimeException("Redis data parsing error", e);
+        }
     }
 
     public List<CourierMovementResponseDTO> getHistory(String courierId) {

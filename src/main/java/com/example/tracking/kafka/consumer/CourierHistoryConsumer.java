@@ -28,25 +28,40 @@ public class CourierHistoryConsumer {
     public void consume(CourierLocationUpdatedEvent event,
                         @Header(value = "traceId", required = false) String traceId) {
 
-        MDC.put("traceId", traceId);
+        try {
+            if (traceId != null) {
+                MDC.put("traceId", traceId);
+            }
 
-        log.info("[MONGO-RECEIVE] traceId={} courierId={} eventId={}",
-                traceId,
-                event.getCourierId(),
-                event.getEventId()
-        );
+            log.info("[MONGO-RECEIVE] traceId={} courierId={} eventId={}",
+                    traceId,
+                    event.getCourierId(),
+                    event.getEventId()
+            );
 
-        CourierMovementDocument doc =
-                CourierMovementMapper.toDocument(event);
+            CourierMovementDocument doc =
+                    CourierMovementMapper.toDocument(event);
 
-        repository.save(doc);
+            repository.save(doc);
 
-        log.info("[MONGO-SAVE] traceId={} courierId={} eventId={} status=SUCCESS",
-                traceId,
-                event.getCourierId(),
-                event.getEventId()
-        );
+            log.info("[MONGO-SAVE] traceId={} courierId={} eventId={} status=SUCCESS",
+                    traceId,
+                    event.getCourierId(),
+                    event.getEventId()
+            );
 
-        MDC.clear();
+        } catch (Exception e) {
+            log.error("[MONGO-SAVE] FAILED traceId={} courierId={} eventId={}",
+                    traceId,
+                    event.getCourierId(),
+                    event.getEventId(),
+                    e
+            );
+
+            throw e; // Kafka retry için bilinçli bırakıyoruz
+
+        } finally {
+            MDC.clear();
+        }
     }
 }
