@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+
+  tracking-app:
+    image: tracking-app:latest
+    container_name: tracking-app
+    restart: always
+    ports:
+      - "8081:8081"
+    networks:
+      - tracking-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_REDIS_HOST: redis

@@ -2,6 +2,7 @@ package com.example.tracking.controller;
 
 import com.example.tracking.model.dto.response.CourierLocationResponseDTO;
 import com.example.tracking.model.dto.response.CourierMovementResponseDTO;
+import com.example.tracking.model.dto.response.CourierNearestResponse;
 import com.example.tracking.service.CourierTrackingQueryService;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,6 +18,11 @@ public class CourierQueryController {
         this.queryService = queryService;
     }
 
+    @GetMapping("/list")
+    public List<CourierLocationResponseDTO> getAllCouriers() {
+        return queryService.getAllLatestLocations();
+    }
+
     @GetMapping("/{courierId}/location")
     public CourierLocationResponseDTO getLocation(@PathVariable String courierId) {
         return queryService.getLatestLocation(courierId);
@@ -25,5 +31,13 @@ public class CourierQueryController {
     @GetMapping("/history/{courierId}")
     public List<CourierMovementResponseDTO> getHistory(@PathVariable String courierId) {
         return queryService.getHistory(courierId);
+    }
+
+    @GetMapping("/nearest")
+    public CourierNearestResponse getNearestCourier(
+            @RequestParam double lat,
+            @RequestParam double lon
+    ) {
+        return queryService.getNearestCourier(lat, lon);
     }
 }
