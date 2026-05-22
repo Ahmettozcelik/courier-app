@@ -10,6 +10,11 @@ management:
     web:
       exposure:
         include: health,info
+
   endpoint:
     health:
       show-details: always
+
+application:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY}

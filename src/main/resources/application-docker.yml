@@ -2,22 +2,24 @@ server:
   port: 8081
 
 spring:
+  application:
+    name: tracking-service
+
   data:
     redis:
-      host: redis
+      host: redis-local
       port: 6379
       lettuce:
         pool:
-          max-active: 16     # Maksimum aktif bağlantı sayısı
-          max-idle: 8        # Boşta bekleyebilecek maksimum bağlantı
-          min-idle: 4        # Uygulama açılır açılmaz hazırda bekleyecek minimum bağlantı (Kritik Ayar!)
-          max-wait: 2000ms   # Bağlantı sırası beklemek için maksimum süre
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+          max-wait: 2000ms
+
     mongodb:
-      host: mongodb
-      port: 27017
-      database: tracking
+      uri: mongodb://mongodb-local:27017/tracking
 
   kafka:
-    bootstrap-servers: kafka:29092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka-local:29092}
     consumer:
       auto-offset-reset: earliest

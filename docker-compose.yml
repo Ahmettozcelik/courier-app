@@ -1,95 +1,20 @@
 version: "3.8"
 
 services:
-
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-    networks:
-      - tracking-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  mongodb:
-    image: mongo:7
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: tracking
-    networks:
-      - tracking-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping')"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-    ports:
-      - "2181:2181"
-    networks:
-      - tracking-network
-
-  kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    ports:
-      - "9092:9092"
-    networks:
-      - tracking-network
-
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
-      # Docker içi + host erişimi
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list || exit 1"]
-      interval: 10s
-      timeout: 10s
-      retries: 15
-
   tracking-app:
-    build: .
-    container_name: tracking-app
+    build:
+      context: . # Kendi klasöründeki Dockerfile'ı kullanır
+    container_name: tracking-app-standalone
     ports:
       - "8081:8081"
     networks:
       - tracking-network
-    depends_on:
-      redis:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    # 🔥 YENİ: Kafka hazır dedikten sonra uygulamanın başlamasını 5 saniye daha geciktirir.
-    # Böylece Kafka arka planda tamamen stabilize olur.
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-
+      # 🚀 Eğer bu bağımsız dosyayı çalıştırırsanız, bilgisayarınızda kurulu olan (localhost) servisleri arar:
+      - spring.data.redis.host=localhost
+      - spring.data.mongodb.host=localhost
+      - spring.kafka.bootstrap-servers=localhost:9092
 
 networks:
   tracking-network:

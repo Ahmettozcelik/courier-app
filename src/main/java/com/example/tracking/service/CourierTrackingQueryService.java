@@ -129,7 +129,7 @@ public class CourierTrackingQueryService {
         RedisGeoCommands.GeoSearchCommandArgs args = RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
                 .includeDistance() // Mesafe bilgisini hesaplatıp DTO'ya eklemek için kritik ayar
                 .sortAscending()   // En yakından en uzağa sıralar
-                .limit(1);         // Sadece en yakın 1 kuryeyi getirir
+                .limit(1);   // Sadece en yakın 1 kuryeyi getirir
 
         GeoResults<RedisGeoCommands.GeoLocation<String>> result = stringRedisTemplate.opsForGeo().search(
                 "couriers:geo",
@@ -146,7 +146,7 @@ public class CourierTrackingQueryService {
         GeoResult<RedisGeoCommands.GeoLocation<String>> geoResult = result.getContent().get(0);
         return new CourierNearestResponse(
                 geoResult.getContent().getName(),
-                geoResult.getDistance().getValue() // Artık mesafe 0.0 yerine doğru km değerini dönecek
+                geoResult.getDistance().getValue()
         );
     }
 }
