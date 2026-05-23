@@ -17,4 +17,4 @@ management:
 
 application:
   jwt:
-    secret-key: ${JWT_SECRET_KEY}
+    secret-key: ${APPLICATION_JWT_SECRET_KEY}

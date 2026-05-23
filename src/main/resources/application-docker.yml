@@ -7,7 +7,7 @@ spring:
 
   data:
     redis:
-      host: redis-local
+      host: ${SPRING_DATA_REDIS_HOST:redis} # <-- Değişti
       port: 6379
       lettuce:
         pool:
@@ -17,9 +17,10 @@ spring:
           max-wait: 2000ms
 
     mongodb:
-      uri: mongodb://mongodb-local:27017/tracking
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://mongodb:27017/tracking} # <-- Değişti
 
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka-local:29092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:29092} # <-- Değişti
     consumer:
       auto-offset-reset: earliest
+
